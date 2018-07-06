@@ -23,8 +23,15 @@ export class ActionService {
     this.dataIsLoading.next(true);
     this.dataEdited.next(false);
     this.userData = data;
-      this.http.post('https://API_ID.execute-api.REGION.amazonaws.com/dev/', data, {
-        headers: new Headers({'Authorization': 'XX'})
+        this.authService.getAuthenticatedUser().getSession((err, session)=>{
+      if(err){
+        return;
+      }
+	  console.log(session.idToken.jwtToken);
+     // console.log(session.accessToken.jwtToken);
+      console.log('session');
+      this.http.post('https://d4w1xxxx/action', data, {
+        headers: new Headers({'Authorization': session.getIdToken().getJwtToken()})
       })
         .subscribe(
           (result) => {
@@ -38,17 +45,22 @@ export class ActionService {
             this.dataEdited.next(false);
           }
         );
+    });
+     
   }
   onRetrieveData(all = true) {
     this.dataLoaded.next(null);
     this.dataLoadFailed.next(false);
-      let queryParam = '';
+	this.authService.getAuthenticatedUser().getSession((err, session) => {
+      let queryParam = '?accessToken='+ session.accessToken.jwtToken;
+	
+     
       let urlParam = 'all';
       if (!all) {
         urlParam = 'single';
       }
       this.http.get('https://asdf' + urlParam + queryParam, {
-        headers: new Headers({'Authorization': 'XXX'})
+        headers: new Headers({'Authorization': session.idToken.jwtToken})
       })
         .map(
           (response: Response) => response.json()
@@ -67,11 +79,12 @@ export class ActionService {
               this.dataEdited.next(true);
             }
           },
-          (error) => {
+          (err) => {
             this.dataLoadFailed.next(true);
             this.dataLoaded.next(null);
           }
         );
+	}); 
   }
   onDeleteData() {
     this.dataLoadFailed.next(false);
